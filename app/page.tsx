@@ -237,7 +237,7 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen relative" style={{ background: '#030614' }}>
+    <div className="h-screen relative flex flex-col" style={{ background: '#030614' }}>
       {/* Background */}
       <div className="bg-cosmos" />
       <div className="grid-overlay" />
@@ -247,7 +247,7 @@ export default function Home() {
       <div className="scan-line" style={{ zIndex: 2 }} />
 
       {/* Content */}
-      <div className="relative" style={{ zIndex: 10 }}>
+      <div className="relative flex flex-col flex-1" style={{ zIndex: 10 }}>
         {/* Header */}
         <header className="flex items-center justify-between px-10 py-5">
           <div className="w-20" />
@@ -293,11 +293,11 @@ export default function Home() {
           </nav>
         </header>
 
-        {/* Main Layout */}
-        <main className="max-w-7xl mx-auto px-10 py-6">
-          <div className="grid grid-cols-[1fr_340px_1fr] gap-6 items-start">
+        {/* Main Layout - fills remaining space */}
+        <main className="flex-1 max-w-[1600px] w-full mx-auto px-10 pb-6 flex flex-col">
+          <div className="flex-1 grid grid-cols-[1fr_360px_1fr] gap-8 items-stretch">
             {/* Left Column */}
-            <div className="space-y-6 pt-8">
+            <div className="flex flex-col justify-between py-4">
               <MenuItem
                 title="内部研发数据"
                 desc="器件性能 · 电光调制 · 非线性光学 · 可靠性测试"
@@ -336,11 +336,11 @@ export default function Home() {
             </div>
 
             {/* Center - Optical Chip */}
-            <div className="flex flex-col items-center justify-center pt-4" style={{ minHeight: 340 }}>
+            <div className="flex flex-col items-center justify-center">
               <div style={{ opacity: mounted ? 1 : 0, transition: 'opacity 1s ease-in' }}>
                 <OpticalChip />
               </div>
-              <div className="mt-8 text-center">
+              <div className="mt-10 text-center">
                 <div
                   className="text-xs tracking-[0.4em] uppercase mb-2"
                   style={{ color: 'rgba(0,180,255,0.35)' }}
@@ -357,7 +357,7 @@ export default function Home() {
             </div>
 
             {/* Right Column */}
-            <div className="space-y-6 pt-8">
+            <div className="flex flex-col justify-between py-4">
               <MenuItem
                 title="外部客户数据"
                 desc="客户样品 · 委托测试 · 报告归档 · 权限共享"
@@ -399,7 +399,7 @@ export default function Home() {
 
           {/* Bottom Stats */}
           <div
-            className="mt-10 rounded-2xl px-10 py-5 flex items-center justify-between"
+            className="rounded-2xl px-10 py-5 flex items-center justify-between mt-auto"
             style={{
               background: 'linear-gradient(135deg, rgba(0,20,60,0.6), rgba(0,10,30,0.4))',
               border: '1px solid rgba(0,120,255,0.1)',
