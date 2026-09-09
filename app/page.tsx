@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-function Particles() {
+/* ========== Particle Canvas ========== */
+function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -11,432 +12,379 @@ function Particles() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    const resize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
 
-    const particles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number; color: string }[] = []
-    const colors = ['rgba(0,150,255,', 'rgba(0,200,180,', 'rgba(120,0,255,']
+    const W = () => canvas.width
+    const H = () => canvas.height
+    const cx = () => W() / 2
+    const cy = () => H() / 2
 
-    for (let i = 0; i < 80; i++) {
+    interface P {
+      x: number; y: number; vx: number; vy: number
+      size: number; alpha: number; color: string; life: number
+    }
+
+    const particles: P[] = []
+    const colors = ['0,150,255', '0,200,180', '120,0,255', '0,255,150']
+
+    // Create flowing particles from center
+    for (let i = 0; i < 300; i++) {
+      const angle = Math.random() * Math.PI * 2
+      const speed = Math.random() * 3 + 1
+      const dist = Math.random() * 100
+      const isLeft = Math.random() > 0.5
+
       particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
+        x: cx() + Math.cos(angle) * dist,
+        y: cy() + Math.sin(angle) * dist,
+        vx: isLeft ? -(Math.random() * 4 + 1) : (Math.random() * 4 + 1),
+        vy: (Math.random() - 0.5) * 2,
+        size: Math.random() * 2.5 + 0.5,
+        alpha: Math.random() * 0.8 + 0.2,
+        color: isLeft ? '0,150,255' : '0,200,120',
+        life: Math.random() * 200 + 100,
+      })
+    }
+
+    // Ambient floating particles
+    for (let i = 0; i < 100; i++) {
+      particles.push({
+        x: Math.random() * W(),
+        y: Math.random() * H(),
         vx: (Math.random() - 0.5) * 0.3,
         vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 2 + 0.5,
-        alpha: Math.random() * 0.5 + 0.1,
-        color: colors[Math.floor(Math.random() * colors.length)]
+        size: Math.random() * 1.5 + 0.3,
+        alpha: Math.random() * 0.3 + 0.05,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 99999,
       })
     }
 
     let animId: number
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    let frame = 0
 
-      particles.forEach((p, i) => {
+    const animate = () => {
+      ctx.fillStyle = 'rgba(3,6,20,0.15)'
+      ctx.fillRect(0, 0, W(), H())
+      frame++
+
+      // Draw center glow
+      const grad = ctx.createRadialGradient(cx(), cy(), 0, cx(), cy(), 150)
+      grad.addColorStop(0, 'rgba(0,180,255,0.08)')
+      grad.addColorStop(0.5, 'rgba(0,120,255,0.03)')
+      grad.addColorStop(1, 'transparent')
+      ctx.fillStyle = grad
+      ctx.fillRect(cx() - 150, cy() - 150, 300, 300)
+
+      particles.forEach((p) => {
         p.x += p.vx
         p.y += p.vy
-        if (p.x < 0) p.x = canvas.width
-        if (p.x > canvas.width) p.x = 0
-        if (p.y < 0) p.y = canvas.height
-        if (p.y > canvas.height) p.y = 0
+        p.life--
+
+        if (p.life <= 0 || p.x < -20 || p.x > W() + 20 || p.y < -20 || p.y > H() + 20) {
+          // Reset from center
+          const angle = Math.random() * Math.PI * 2
+          const dist = Math.random() * 30
+          const isLeft = Math.random() > 0.5
+          p.x = cx() + Math.cos(angle) * dist
+          p.y = cy() + Math.sin(angle) * dist
+          p.vx = isLeft ? -(Math.random() * 4 + 1) : (Math.random() * 4 + 1)
+          p.vy = (Math.random() - 0.5) * 2
+          p.life = Math.random() * 200 + 100
+          p.alpha = Math.random() * 0.8 + 0.2
+          p.color = isLeft ? '0,150,255' : '0,200,120'
+        }
+
+        // Add some wave to the flow
+        if (Math.abs(p.vx) > 1) {
+          p.vy += Math.sin(frame * 0.02 + p.x * 0.01) * 0.02
+        }
 
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = p.color + p.alpha + ')'
+        ctx.fillStyle = `rgba(${p.color},${p.alpha * (p.life > 50 ? 1 : p.life / 50)})`
         ctx.fill()
 
-        particles.slice(i + 1).forEach(p2 => {
-          const dx = p.x - p2.x
-          const dy = p.y - p2.y
+        // Trail
+        if (Math.abs(p.vx) > 1) {
+          ctx.beginPath()
+          ctx.moveTo(p.x, p.y)
+          ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3)
+          ctx.strokeStyle = `rgba(${p.color},${p.alpha * 0.2})`
+          ctx.lineWidth = p.size * 0.5
+          ctx.stroke()
+        }
+      })
+
+      // Draw connection lines between nearby flow particles
+      const flowParticles = particles.filter(p => Math.abs(p.vx) > 1)
+      for (let i = 0; i < flowParticles.length; i++) {
+        for (let j = i + 1; j < flowParticles.length; j++) {
+          const dx = flowParticles[i].x - flowParticles[j].x
+          const dy = flowParticles[i].y - flowParticles[j].y
           const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 150) {
+          if (dist < 60) {
             ctx.beginPath()
-            ctx.moveTo(p.x, p.y)
-            ctx.lineTo(p2.x, p2.y)
-            ctx.strokeStyle = `rgba(0,150,255,${0.06 * (1 - dist / 150)})`
+            ctx.moveTo(flowParticles[i].x, flowParticles[i].y)
+            ctx.lineTo(flowParticles[j].x, flowParticles[j].y)
+            ctx.strokeStyle = `rgba(0,150,255,${0.06 * (1 - dist / 60)})`
             ctx.lineWidth = 0.5
             ctx.stroke()
           }
-        })
-      })
+        }
+      }
 
       animId = requestAnimationFrame(animate)
     }
     animate()
 
-    const handleResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    window.addEventListener('resize', handleResize)
-
     return () => {
       cancelAnimationFrame(animId)
-      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('resize', resize)
     }
   }, [])
 
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none" style={{ zIndex: 1 }} />
+  return <canvas ref={canvasRef} id="particle-canvas" />
 }
 
-function OpticalChip() {
-  return (
-    <div className="relative" style={{ width: 300, height: 300 }}>
-      {/* Rotating Rings */}
-      <div className="ring ring-1" />
-      <div className="ring ring-2" />
-      <div className="ring ring-3" />
-
-      {/* Ring Orbs */}
-      {[0, 90, 180, 270].map((deg) => (
-        <div
-          key={deg}
-          className="absolute top-1/2 left-1/2"
-          style={{
-            width: 8,
-            height: 8,
-            background: 'radial-gradient(circle, rgba(0,200,255,0.8), rgba(0,100,255,0.2))',
-            borderRadius: '50%',
-            boxShadow: '0 0 12px rgba(0,200,255,0.5)',
-            transform: `translate(-50%, -50%) rotate(${deg}deg) translateX(110px)`,
-            animation: `spin 20s linear infinite`,
-          }}
-        />
-      ))}
-
-      {/* Light Beams */}
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
-        <div
-          key={`beam-${deg}`}
-          className="light-beam"
-          style={{
-            width: 150,
-            background: `linear-gradient(90deg, rgba(0,180,255,0.4), transparent)`,
-            transform: `rotate(${deg}deg)`,
-            animationDelay: `${deg * 0.02}s`,
-          }}
-        />
-      ))}
-
-      {/* Waveguide Lines */}
-      {[-1, 1].map((dir) => (
-        <div key={`wg-${dir}`}>
-          <div
-            className="waveguide"
-            style={{
-              width: 200,
-              top: '50%',
-              left: dir === -1 ? undefined : '50%',
-              right: dir === -1 ? '50%' : undefined,
-              transform: `translateY(-50%)`,
-            }}
-          />
-          <div
-            className="waveguide"
-            style={{
-              height: 200,
-              width: 1,
-              left: '50%',
-              top: dir === -1 ? undefined : '50%',
-              bottom: dir === -1 ? '50%' : undefined,
-              transform: 'translateX(-50%)',
-              background: 'linear-gradient(180deg, transparent, rgba(0,150,255,0.3), transparent)',
-            }}
-          />
-        </div>
-      ))}
-
-      {/* Central Chip Body */}
-      <div className="chip-body" />
-      <div className="chip-inner">
-        <div className="chip-dot" />
-      </div>
-
-      {/* Chip Label */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div
-          className="text-xs tracking-widest uppercase mt-1"
-          style={{ color: 'rgba(0,180,255,0.5)', marginTop: 80 }}
-        >
-          LN Chip
-        </div>
-      </div>
-    </div>
-  )
-}
-
-interface MenuItemProps {
-  title: string
-  desc: string
-  icon: React.ReactNode
-  color: 'blue' | 'green'
-  items: string[]
-  style?: React.CSSProperties
-}
-
-function MenuItem({ title, desc, icon, color, items, style }: MenuItemProps) {
-  const [hovered, setHovered] = useState(false)
-
-  return (
-    <div
-      className={`menu-card ${color === 'green' ? 'green' : ''}`}
-      style={style}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div className="tooltip" style={{ top: -8, left: '50%', transform: `translateX(-50%) translateY(${hovered ? '-8px' : '0'})` }}>
-        点击进入
-      </div>
-
-      <div className="flex items-start gap-4">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{
-            background: color === 'blue'
-              ? 'linear-gradient(135deg, rgba(0,100,255,0.2), rgba(0,60,180,0.1))'
-              : 'linear-gradient(135deg, rgba(0,200,120,0.2), rgba(0,150,80,0.1))',
-            border: `1px solid ${color === 'blue' ? 'rgba(0,120,255,0.2)' : 'rgba(0,200,120,0.2)'}`,
-          }}
-        >
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-white font-semibold text-base mb-1">{title}</h3>
-          <p className="text-xs mb-4" style={{ color: color === 'blue' ? 'rgba(100,180,255,0.5)' : 'rgba(100,200,150,0.5)' }}>
-            {desc}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {items.map((item) => (
-              <span
-                key={item}
-                className="text-xs px-3 py-1.5 rounded-lg"
-                style={{
-                  background: color === 'blue'
-                    ? 'rgba(0,80,200,0.12)'
-                    : 'rgba(0,160,100,0.12)',
-                  border: `1px solid ${color === 'blue' ? 'rgba(0,120,255,0.15)' : 'rgba(0,200,120,0.15)'}`,
-                  color: color === 'blue' ? 'rgba(100,180,255,0.8)' : 'rgba(100,200,150,0.8)',
-                }}
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function Home() {
-  const [mounted, setMounted] = useState(false)
+/* ========== Chart Component ========== */
+function SpectrumChart() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [activeTab, setActiveTab] = useState('transmission')
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const rect = canvas.parentElement?.getBoundingClientRect()
+    if (!rect) return
+    canvas.width = rect.width * 2
+    canvas.height = rect.height * 2
+    ctx.scale(2, 2)
+    const w = rect.width
+    const h = rect.height
+
+    // Background
+    ctx.fillStyle = 'transparent'
+    ctx.fillRect(0, 0, w, h)
+
+    // Grid
+    ctx.strokeStyle = 'rgba(0,100,255,0.06)'
+    ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = 10 + (h - 25) * (i / 4)
+      ctx.beginPath()
+      ctx.moveTo(30, y)
+      ctx.lineTo(w - 10, y)
+      ctx.stroke()
+
+      ctx.fillStyle = 'rgba(120,160,200,0.3)'
+      ctx.font = '9px sans-serif'
+      ctx.textAlign = 'right'
+      ctx.fillText(String(300 - i * 50), 26, y + 3)
+    }
+
+    // X labels
+    ctx.textAlign = 'center'
+    const xLabels = ['0.5', '1.0', '1.5', '2.0']
+    xLabels.forEach((label, i) => {
+      const x = 30 + (w - 40) * (i / (xLabels.length - 1))
+      ctx.fillText(label, x, h - 5)
+    })
+
+    // Draw curves
+    const drawCurve = (offset: number, color: string, amplitude: number) => {
+      ctx.beginPath()
+      ctx.strokeStyle = color
+      ctx.lineWidth = 1.5
+      for (let x = 0; x <= w - 40; x++) {
+        const t = x / (w - 40)
+        const y = 15 + (h - 35) / 2 +
+          Math.sin(t * 8 + offset) * amplitude * (1 - t * 0.3) +
+          Math.sin(t * 15 + offset * 2) * amplitude * 0.3 +
+          Math.sin(t * 3 + offset * 0.5) * amplitude * 0.5
+
+        if (x === 0) ctx.moveTo(30 + x, y)
+        else ctx.lineTo(30 + x, y)
+      }
+      ctx.stroke()
+
+      // Fill
+      ctx.lineTo(30 + w - 40, h - 20)
+      ctx.lineTo(30, h - 20)
+      ctx.closePath()
+      const grad = ctx.createLinearGradient(0, 0, 0, h)
+      grad.addColorStop(0, color.replace('1)', '0.15)'))
+      grad.addColorStop(1, 'transparent')
+      ctx.fillStyle = grad
+      ctx.fill()
+    }
+
+    drawCurve(0, 'rgba(0,180,255,1)', 25)
+    drawCurve(2, 'rgba(0,255,150,1)', 20)
+    drawCurve(4, 'rgba(180,0,255,1)', 15)
+  }, [activeTab])
+
+  const tabs = [
+    { id: 'transmission', label: '透射谱' },
+    { id: 'bandwidth', label: '调制带宽' },
+    { id: 'distribution', label: '客户项目分布' },
+  ]
 
   return (
-    <div className="h-screen relative flex flex-col" style={{ background: '#030614' }}>
-      {/* Background */}
-      <div className="bg-cosmos" />
-      <div className="grid-overlay" />
-      <Particles />
-
-      {/* Scan Line */}
-      <div className="scan-line" style={{ zIndex: 2 }} />
-
-      {/* Content */}
-      <div className="relative flex flex-col flex-1" style={{ zIndex: 10 }}>
-        {/* Header */}
-        <header className="flex items-center justify-between px-10 py-5">
-          <div className="w-20" />
-          <h1
-            className="text-lg font-bold tracking-[0.3em] uppercase"
-            style={{
-              background: 'linear-gradient(90deg, rgba(0,150,255,0.6), rgba(200,220,255,0.9), rgba(0,200,180,0.6))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            铌酸锂光芯片测试数据平台
-          </h1>
-          <nav className="flex items-center gap-6">
-            {['数据仓库', '项目概览', '用户中心'].map((item) => (
-              <button
-                key={item}
-                className="text-sm tracking-wide transition-colors duration-300"
-                style={{ color: 'rgba(160,200,240,0.5)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(200,230,255,0.9)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(160,200,240,0.5)')}
-              >
-                {item}
-              </button>
-            ))}
-            <button
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300"
-              style={{ border: '1px solid rgba(0,150,255,0.15)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(0,150,255,0.4)'
-                e.currentTarget.style.boxShadow = '0 0 15px rgba(0,150,255,0.1)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(0,150,255,0.15)'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
+    <div className="chart-panel">
+      <div className="chart-header">
+        <span className="chart-title">透射谱</span>
+        <div className="chart-tabs">
+          {tabs.map(tab => (
+            <div
+              key={tab.id}
+              className={`chart-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,150,255,0.5)" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
+              {tab.label}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="chart-body">
+        <canvas ref={canvasRef} className="chart-canvas" />
+      </div>
+    </div>
+  )
+}
+
+/* ========== Data Node ========== */
+interface DataNodeProps {
+  x: string; y: string; label: string; color: 'blue' | 'green'
+}
+
+function DataNode({ x, y, label, color }: DataNodeProps) {
+  return (
+    <div
+      className={`data-node node-${color}`}
+      style={{ left: x, top: y }}
+    >
+      <div className="node-circle" />
+      <div className="node-label">{label}</div>
+    </div>
+  )
+}
+
+/* ========== Main Page ========== */
+export default function Home() {
+  return (
+    <div className="h-screen w-screen relative overflow-hidden" style={{ background: '#030614' }}>
+      <ParticleCanvas />
+      <div className="grid-bg" />
+
+      {/* Corner Decorations */}
+      <div className="corner-tl" />
+      <div className="corner-tr" />
+      <div className="corner-bl" />
+      <div className="corner-br" />
+      <div className="side-line-left" />
+      <div className="side-line-right" />
+
+      {/* AI Badge */}
+      <div className="ai-badge">AI 生成</div>
+
+      {/* Header */}
+      <div className="header-bar">
+        <div className="flex items-center gap-6">
+          <div className="header-nav-item">数据空间</div>
+        </div>
+        <div className="header-title">铌酸锂光学测试数据平台</div>
+        <div className="flex items-center gap-6">
+          <div className="header-nav-item">测试任务</div>
+          <div className="header-nav-item active">报告中心</div>
+        </div>
+      </div>
+
+      {/* Section Labels */}
+      <div className="section-label label-blue">内部研发测试数据</div>
+      <div className="section-label label-green">外部客户测试数据</div>
+
+      {/* Center Hub */}
+      <div className="center-hub">
+        <div className="hub-ring hub-ring-1" />
+        <div className="hub-ring hub-ring-2" />
+        <div className="hub-core" />
+        <div className="hub-dot" />
+      </div>
+
+      {/* Light Beams */}
+      <div className="beam-glow-left" />
+      <div className="light-beam-left" />
+      <div className="light-beam-right" />
+      <div className="beam-glow-right" />
+
+      {/* Blue Nodes (Left - Internal R&D) */}
+      <DataNode x="12%" y="30%" label="材料表征" color="blue" />
+      <DataNode x="18%" y="45%" label="波导损耗" color="blue" />
+      <DataNode x="24%" y="55%" label="调制响应" color="blue" />
+      <DataNode x="16%" y="62%" label="频率转换" color="blue" />
+      <DataNode x="30%" y="38%" label="频率转换" color="blue" />
+
+      {/* Green Nodes (Right - External Clients) */}
+      <DataNode x="72%" y="28%" label="客户样品" color="green" />
+      <DataNode x="80%" y="42%" label="测试工单" color="green" />
+      <DataNode x="68%" y="58%" label="原始数据" color="green" />
+      <DataNode x="82%" y="60%" label="结果报告" color="green" />
+
+      {/* Bottom Panel */}
+      <div className="bottom-panel">
+        {/* Controls */}
+        <div className="controls-panel">
+          <div className="timeline-bar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,180,255,0.5)" strokeWidth="2">
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
+            <div className="timeline-track">
+              <div className="timeline-fill" />
+              <div className="timeline-thumb" />
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,180,255,0.5)" strokeWidth="2">
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
+            </svg>
+          </div>
+          <div className="control-buttons">
+            <div className="ctrl-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12,6 12,12 16,14" />
               </svg>
-            </button>
-          </nav>
-        </header>
-
-        {/* Main Layout - fills remaining space */}
-        <main className="flex-1 max-w-[1600px] w-full mx-auto px-10 pb-6 flex flex-col">
-          <div className="flex-1 grid grid-cols-[1fr_360px_1fr] gap-8 items-stretch">
-            {/* Left Column */}
-            <div className="flex flex-col justify-between py-4">
-              <MenuItem
-                title="内部研发数据"
-                desc="器件性能 · 电光调制 · 非线性光学 · 可靠性测试"
-                color="blue"
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,180,255,0.7)" strokeWidth="1.5">
-                    <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v6m0 0H3m6 0h12M3 9v10a2 2 0 002 2h4m-6-12h18v10a2 2 0 01-2 2h-4m-6 0v-6m6 6h4a2 2 0 002-2V9m0 12v-6" />
-                  </svg>
-                }
-                items={['薄膜铌酸锂', '波导传输损耗', '调制响应', '频率转换']}
-              />
-
-              <MenuItem
-                title="光传输特性"
-                desc="波导损耗 · 模场分布 · 耦合效率 · 偏振控制"
-                color="blue"
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,180,255,0.7)" strokeWidth="1.5">
-                    <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                }
-                items={['TE模态', 'TM模态', '插入损耗', '回波损耗']}
-              />
-
-              <MenuItem
-                title="电光调制性能"
-                desc="半波电压 · 调制带宽 · 消光比 · 啁啾控制"
-                color="blue"
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,180,255,0.7)" strokeWidth="1.5">
-                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                }
-                items={['Vπ电压', '3dB带宽', '消光比', '啁啾参数']}
-              />
+              时间轴播放
             </div>
-
-            {/* Center - Optical Chip */}
-            <div className="flex flex-col items-center justify-center">
-              <div style={{ opacity: mounted ? 1 : 0, transition: 'opacity 1s ease-in' }}>
-                <OpticalChip />
-              </div>
-              <div className="mt-10 text-center">
-                <div
-                  className="text-xs tracking-[0.4em] uppercase mb-2"
-                  style={{ color: 'rgba(0,180,255,0.35)' }}
-                >
-                  Lithium Niobate On Insulator
-                </div>
-                <div
-                  className="text-sm font-medium"
-                  style={{ color: 'rgba(200,220,255,0.6)' }}
-                >
-                  铌酸锂薄膜光子集成芯片
-                </div>
-              </div>
+            <div className="ctrl-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3" />
+                <circle cx="5" cy="6" r="2" />
+                <circle cx="19" cy="8" r="2" />
+                <circle cx="8" cy="18" r="2" />
+                <circle cx="17" cy="17" r="2" />
+              </svg>
+              粒子密度
             </div>
-
-            {/* Right Column */}
-            <div className="flex flex-col justify-between py-4">
-              <MenuItem
-                title="外部客户数据"
-                desc="客户样品 · 委托测试 · 报告归档 · 权限共享"
-                color="green"
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,140,0.7)" strokeWidth="1.5">
-                    <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                }
-                items={['客户样品编号', '测试任务', '原始数据', '分析报告']}
-              />
-
-              <MenuItem
-                title="工艺制程监控"
-                desc="薄膜厚度 · 刻蚀深度 · 光刻对准 · 良率分析"
-                color="green"
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,140,0.7)" strokeWidth="1.5">
-                    <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                }
-                items={['薄膜厚度', '刻蚀均匀性', '对准精度', '良率趋势']}
-              />
-
-              <MenuItem
-                title="可靠性评估"
-                desc="温度循环 · 湿热老化 · 光功率耐久 · 长期稳定性"
-                color="green"
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,140,0.7)" strokeWidth="1.5">
-                    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                }
-                items={['温度循环', '湿热老化', '光功率耐久', '寿命预测']}
-              />
+            <div className="ctrl-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46" />
+              </svg>
+              数据筛选
             </div>
           </div>
+        </div>
 
-          {/* Bottom Stats */}
-          <div
-            className="rounded-2xl px-10 py-5 flex items-center justify-between mt-auto"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0,20,60,0.6), rgba(0,10,30,0.4))',
-              border: '1px solid rgba(0,120,255,0.1)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            {[
-              { label: '总测试项目', value: '1,247', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-              { label: '内部项目', value: '68%', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
-              { label: '客户项目', value: '32%', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-              { label: '芯片良率', value: '94.2%', icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
-              { label: '最近更新', value: '刚刚', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
-            ].map((stat) => (
-              <div key={stat.label} className="stat-item flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(0,80,200,0.12), rgba(0,50,150,0.06))',
-                    border: '1px solid rgba(0,120,255,0.1)',
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(0,160,255,0.5)" strokeWidth="1.5">
-                    <path d={stat.icon} />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-xs" style={{ color: 'rgba(120,160,200,0.5)' }}>
-                    {stat.label}
-                  </div>
-                  <div className="text-sm font-semibold text-white">
-                    {stat.value}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </main>
+        {/* Chart */}
+        <SpectrumChart />
       </div>
     </div>
   )
