@@ -15,14 +15,10 @@ export default function Home() {
       <div className="relative z-10">
         {/* Top Navigation Bar */}
         <header className="flex items-center justify-between px-8 py-4 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="px-3 py-1 rounded border border-white/10 text-xs text-gray-400 bg-white/5">
-              AI 生成
-            </div>
-          </div>
+          <div />
 
           <h1 className="text-xl font-bold tracking-wider bg-gradient-to-r from-blue-300 via-white to-blue-300 bg-clip-text text-transparent">
-            锌酸锂光学测试数据平台
+            铌酸锂光学测试数据平台
           </h1>
 
           <nav className="flex items-center gap-8">
@@ -61,7 +57,7 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-4 mb-8">
                 <button className="btn-blue rounded-lg px-5 py-3 text-left text-sm text-blue-100">
-                  薄膜锌酸锂
+                  薄膜铌酸锂
                 </button>
                 <button className="btn-blue rounded-lg px-5 py-3 text-left text-sm text-blue-100">
                   波导传输损耗

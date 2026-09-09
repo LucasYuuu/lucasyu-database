@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "锌酸锂光学测试数据平台",
-  description: "锌酸锂光学测试数据管理平台",
+  title: "铌酸锂光学测试数据平台",
+  description: "铌酸锂光学测试数据管理平台",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
