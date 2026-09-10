@@ -194,7 +194,7 @@ function DataCard({ title, items, cylinderLabel }: {
 
 export default function Home() {
   return (
-    <div className="min-h-screen" style={{ background: '#0a1628' }}>
+    <div style={{ background: '#0a1628', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="corner-dec c-tl" />
       <div className="corner-dec c-tr" />
       <div className="corner-dec c-bl" />
@@ -234,10 +234,10 @@ export default function Home() {
         <div className="subtitle-desc">内部研发数据与外部客户数据分类管理</div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-8 pb-6">
+      {/* Main Content - fills remaining space */}
+      <div style={{ flex: 1, padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden' }}>
         {/* Two Data Cards */}
-        <div className="flex gap-6 mb-6">
+        <div style={{ display: 'flex', gap: 20, flex: '0 0 auto' }}>
           <DataCard
             title="内部研发测试数据"
             items={[
@@ -260,11 +260,11 @@ export default function Home() {
           />
         </div>
 
-        {/* Bottom Row */}
-        <div className="flex gap-6">
+        {/* Bottom Row - fills remaining space */}
+        <div style={{ display: 'flex', gap: 20, flex: 1, minHeight: 0 }}>
           {/* Chart */}
-          <div className="panel flex-1" style={{ height: 220 }}>
-            <div className="chart-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="chart-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div className="chart-title">
                 项目仪表盘统计
                 <div className="legend-item">
@@ -276,14 +276,14 @@ export default function Home() {
                   新项目数量
                 </div>
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minHeight: 0 }}>
                 <LineChart />
               </div>
             </div>
           </div>
 
           {/* Gauge */}
-          <div className="panel" style={{ width: 240, height: 220 }}>
+          <div className="panel" style={{ width: 240, flex: '0 0 240px' }}>
             <div className="gauge-panel">
               <div className="gauge-title">标准仪表盘组件</div>
               <Gauge />
@@ -301,7 +301,7 @@ export default function Home() {
           </div>
 
           {/* Recent Updates */}
-          <div className="panel" style={{ width: 260, height: 220 }}>
+          <div className="panel" style={{ width: 260, flex: '0 0 260px' }}>
             <div className="recent-panel">
               <div className="recent-title">最近更新</div>
               <div className="recent-header">
