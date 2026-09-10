@@ -113,15 +113,12 @@ export default function Home() {
         @keyframes scanline { 0% { top: -5%; } 100% { top: 105%; } }
       `}</style>
 
-      {/* Background image with zoom + drift */}
+      {/* Background image */}
       <div style={{
-        position: 'absolute',
-        inset: '-3%',
-        width: '106%', height: '106%',
+        position: 'absolute', inset: 0,
         backgroundImage: 'url(/bg.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        filter: 'brightness(0.55) saturate(1.2)',
         animation: 'slowZoom 30s ease-in-out infinite alternate, drift 20s ease-in-out infinite',
         transformOrigin: `${50 + (mousePos.x - 50) * 0.02}% ${50 + (mousePos.y - 50) * 0.02}%`,
         transition: 'transform-origin 0.3s ease',
@@ -153,10 +150,10 @@ export default function Home() {
         pointerEvents: 'none', zIndex: 1,
       }} />
 
-      {/* Vignette */}
+      {/* Vignette - very subtle */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at center, transparent 35%, rgba(2,8,16,0.8) 100%)',
+        background: 'radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.3) 100%)',
         pointerEvents: 'none', zIndex: 4,
       }} />
     </div>
