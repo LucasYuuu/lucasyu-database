@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function LineChart() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -20,78 +20,65 @@ function LineChart() {
     const w = rect.width
     const h = rect.height
 
-    // Grid
-    ctx.strokeStyle = 'rgba(0,120,180,0.06)'
+    ctx.strokeStyle = 'rgba(0,180,255,0.12)'
     ctx.lineWidth = 0.5
-    for (let i = 0; i <= 6; i++) {
-      const y = 10 + (h - 30) * (i / 6)
+    for (let i = 0; i <= 5; i++) {
+      const y = 10 + (h - 30) * (i / 5)
       ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(w - 10, y); ctx.stroke()
-      ctx.fillStyle = 'rgba(120,160,200,0.3)'
+      ctx.fillStyle = 'rgba(120,200,255,0.4)'
       ctx.font = '10px sans-serif'
       ctx.textAlign = 'right'
-      ctx.fillText(String(1000 - i * 150), 26, y + 3)
+      ctx.fillText(String(1000 - i * 200), 26, y + 3)
     }
 
-    // X labels
     ctx.textAlign = 'center'
-    const xLabels = ['20-10', '20-10', '40-10', '20-10', '30-00', '20-16', '20-10', '70-40', '20-16', '10-16']
+    const xLabels = ['20-10', '20-10', '40-10', '20-10', '30-00', '20-16', '20-10', '70-40']
     xLabels.forEach((l, i) => {
       ctx.fillText(l, 30 + (w - 40) * (i / (xLabels.length - 1)), h - 8)
     })
 
-    // Data line 1 (项目数量) - cyan
-    const data1 = [280, 350, 420, 520, 450, 380, 500, 650, 580, 400]
+    const data1 = [280, 350, 420, 520, 450, 380, 500, 650]
     ctx.beginPath()
     data1.forEach((v, i) => {
       const x = 30 + (w - 40) * (i / (data1.length - 1))
       const y = 10 + (h - 30) * (1 - v / 1000)
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
     })
-    ctx.strokeStyle = 'rgba(0,220,255,0.8)'
+    ctx.strokeStyle = 'rgba(0,220,255,0.9)'
     ctx.lineWidth = 2
     ctx.stroke()
-
-    // Fill under line 1
     ctx.lineTo(30 + w - 40, h - 20)
     ctx.lineTo(30, h - 20)
     ctx.closePath()
     const grad1 = ctx.createLinearGradient(0, 0, 0, h)
-    grad1.addColorStop(0, 'rgba(0,200,255,0.15)')
+    grad1.addColorStop(0, 'rgba(0,200,255,0.2)')
     grad1.addColorStop(1, 'transparent')
     ctx.fillStyle = grad1
     ctx.fill()
 
-    // Data dots
     data1.forEach((v, i) => {
       const x = 30 + (w - 40) * (i / (data1.length - 1))
       const y = 10 + (h - 30) * (1 - v / 1000)
-      ctx.beginPath()
-      ctx.arc(x, y, 3, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(0,220,255,0.9)'
-      ctx.fill()
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(0,220,255,0.9)'; ctx.fill()
     })
 
-    // Data line 2 (新项目数量) - green
-    const data2 = [180, 220, 300, 380, 320, 280, 400, 520, 450, 300]
+    const data2 = [180, 220, 300, 380, 320, 280, 400, 520]
     ctx.beginPath()
     data2.forEach((v, i) => {
       const x = 30 + (w - 40) * (i / (data2.length - 1))
       const y = 10 + (h - 30) * (1 - v / 1000)
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
     })
-    ctx.strokeStyle = 'rgba(0,200,180,0.7)'
+    ctx.strokeStyle = 'rgba(0,255,200,0.7)'
     ctx.lineWidth = 2
     ctx.stroke()
 
     data2.forEach((v, i) => {
       const x = 30 + (w - 40) * (i / (data2.length - 1))
       const y = 10 + (h - 30) * (1 - v / 1000)
-      ctx.beginPath()
-      ctx.arc(x, y, 3, 0, Math.PI * 2)
-      ctx.fillStyle = 'rgba(0,200,180,0.8)'
-      ctx.fill()
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(0,255,200,0.8)'; ctx.fill()
     })
   }, [])
 
@@ -108,83 +95,104 @@ function Gauge() {
     if (!ctx) return
 
     const dpr = 2
-    const size = 140
+    const size = 120
     canvas.width = size * dpr
     canvas.height = size * dpr
     ctx.scale(dpr, dpr)
 
     const cx = size / 2
     const cy = size / 2
-    const r = 55
+    const r = 48
 
-    // Background ring
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.strokeStyle = 'rgba(0,100,150,0.15)'
-    ctx.lineWidth = 10
+    ctx.strokeStyle = 'rgba(0,150,255,0.15)'
+    ctx.lineWidth = 8
     ctx.stroke()
 
-    // Progress ring (50%)
     const startAngle = -Math.PI / 2
-    const endAngle = startAngle + Math.PI // 50%
+    const endAngle = startAngle + Math.PI
 
     const grad = ctx.createLinearGradient(0, 0, size, size)
     grad.addColorStop(0, 'rgba(0,220,255,0.9)')
-    grad.addColorStop(0.5, 'rgba(0,180,220,0.7)')
     grad.addColorStop(1, 'rgba(0,120,200,0.5)')
 
     ctx.beginPath()
     ctx.arc(cx, cy, r, startAngle, endAngle)
     ctx.strokeStyle = grad
-    ctx.lineWidth = 10
+    ctx.lineWidth = 8
     ctx.lineCap = 'round'
     ctx.stroke()
-
-    // Glow effect
-    ctx.beginPath()
-    ctx.arc(cx, cy, r, startAngle, endAngle)
-    ctx.strokeStyle = 'rgba(0,200,255,0.15)'
-    ctx.lineWidth = 20
-    ctx.filter = 'blur(8px)'
-    ctx.stroke()
-    ctx.filter = 'none'
   }, [])
 
   return (
-    <div className="gauge-ring">
-      <canvas ref={canvasRef} style={{ width: 140, height: 140 }} />
-      <div className="gauge-value">
-        <div className="gauge-num">50<span style={{ fontSize: 16 }}>%</span></div>
-        <div className="gauge-sub">项目完成率</div>
+    <div style={{ position: 'relative', width: 120, height: 120 }}>
+      <canvas ref={canvasRef} style={{ width: 120, height: 120 }} />
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)', textAlign: 'center'
+      }}>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#00e0ff' }}>50%</div>
+        <div style={{ fontSize: 11, color: 'rgba(180,220,255,0.6)' }}>项目完成率</div>
       </div>
     </div>
   )
 }
 
-function DataCard({ title, items, cylinderLabel }: {
+function GlowCard({ title, items, cylinderLabel }: {
   title: string; items: { label: string; icon: string }[]; cylinderLabel: string
 }) {
   return (
-    <div className="panel flex-1">
-      <div className="card-header">
-        <span className="arrow">›</span>
-        {title}
+    <div style={{
+      flex: 1,
+      background: 'rgba(5,20,45,0.65)',
+      backdropFilter: 'blur(16px)',
+      borderRadius: 16,
+      border: '1px solid rgba(0,180,255,0.2)',
+      padding: '20px 24px',
+      boxShadow: '0 0 40px rgba(0,150,255,0.08), inset 0 1px 0 rgba(0,200,255,0.1)',
+    }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(200,240,255,0.9)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ color: '#00d4ff', fontSize: 18 }}>›</span> {title}
       </div>
-      <div style={{ display: 'flex', gap: 20, padding: '0 24px 24px' }}>
-        <div className="btn-grid" style={{ flex: 1, padding: 0 }}>
+      <div style={{ display: 'flex', gap: 20, alignItems: 'stretch' }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {items.map((item) => (
-            <div key={item.label} className="data-btn cyan">
-              <div className="icon">{item.icon}</div>
+            <div key={item.label} style={{
+              background: 'rgba(0,180,255,0.08)',
+              border: '1px solid rgba(0,180,255,0.15)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              color: 'rgba(180,230,255,0.85)',
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <span style={{ color: '#00d4ff', fontSize: 14 }}>{item.icon}</span>
               {item.label}
             </div>
           ))}
         </div>
-        <div className="cylinder-wrap" style={{ padding: 0, flex: '0 0 120px' }}>
-          <div className="cylinder">
-            <div className="cyl-top" />
-            <div className="cyl-body" />
-            <div className="cyl-bottom" />
-            <div className="cyl-label">{cylinderLabel}</div>
+        <div style={{
+          width: 100,
+          background: 'rgba(0,150,255,0.06)',
+          borderRadius: 12,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px solid rgba(0,180,255,0.1)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '60%',
+            background: 'linear-gradient(to top, rgba(0,200,255,0.15), transparent)',
+            borderRadius: '50% 50% 0 0',
+          }} />
+          <div style={{ fontSize: 11, color: 'rgba(150,210,255,0.6)', textAlign: 'center', padding: '0 8px', position: 'relative', zIndex: 1 }}>
+            {cylinderLabel}
           </div>
         </div>
       </div>
@@ -194,117 +202,195 @@ function DataCard({ title, items, cylinderLabel }: {
 
 export default function Home() {
   return (
-    <div style={{ background: '#0a1628', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div className="corner-dec c-tl" />
-      <div className="corner-dec c-tr" />
-      <div className="corner-dec c-bl" />
-      <div className="corner-dec c-br" />
+    <div style={{
+      height: '100vh',
+      width: '100vw',
+      position: 'relative',
+      overflow: 'hidden',
+      background: '#050e1c',
+    }}>
+      {/* Full-screen background image */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: 'url(/bg.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        filter: 'brightness(0.7)',
+        zIndex: 0,
+      }} />
 
-      {/* Header */}
-      <div className="top-bar">
-        <div className="nav-group">
-          <div className="nav-tab active">首页</div>
-          <div className="nav-tab">内部研发</div>
-        </div>
-        <div className="header-title">铌酸锂光学测试数据平台</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div className="nav-group">
-            <div className="nav-tab">客户数据</div>
-            <div className="nav-tab">测试分析</div>
-            <div className="nav-tab">报告中心</div>
+      {/* Subtle overlay gradient for readability */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(180deg, rgba(5,15,35,0.5) 0%, rgba(5,15,35,0.2) 30%, rgba(5,15,35,0.3) 70%, rgba(5,15,35,0.6) 100%)',
+        zIndex: 1,
+      }} />
+
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 32px',
+          background: 'rgba(5,15,35,0.5)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(0,180,255,0.15)',
+        }}>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+            {['首页', '内部研发'].map((t, i) => (
+              <div key={t} style={{
+                color: i === 0 ? '#00d4ff' : 'rgba(180,220,255,0.5)',
+                fontSize: 13, fontWeight: i === 0 ? 600 : 400,
+                cursor: 'pointer',
+                borderBottom: i === 0 ? '2px solid #00d4ff' : '2px solid transparent',
+                paddingBottom: 2,
+              }}>{t}</div>
+            ))}
           </div>
-          <div className="user-icons">
-            <div className="user-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#e0f0ff', letterSpacing: 2 }}>
+            铌酸锂光学测试数据平台
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div style={{ display: 'flex', gap: 24 }}>
+              {['客户数据', '测试分析', '报告中心'].map((t) => (
+                <div key={t} style={{
+                  color: 'rgba(180,220,255,0.5)',
+                  fontSize: 13, cursor: 'pointer',
+                }}>{t}</div>
+              ))}
             </div>
-            <div className="user-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'rgba(0,180,255,0.1)',
+                border: '1px solid rgba(0,180,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.7)" strokeWidth="1.5">
+                  <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'rgba(0,180,255,0.1)',
+                border: '1px solid rgba(0,180,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,200,255,0.7)" strokeWidth="1.5">
+                  <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Subtitle */}
-      <div className="subtitle-area">
-        <div className="subtitle-title">数据概览</div>
-        <div className="subtitle-desc">内部研发数据与外部客户数据分类管理</div>
-      </div>
-
-      {/* Main Content - fills remaining space */}
-      <div style={{ flex: 1, padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden' }}>
-        {/* Two Data Cards */}
-        <div style={{ display: 'flex', gap: 20, flex: '0 0 auto' }}>
-          <DataCard
-            title="内部研发测试数据"
-            items={[
-              { label: '薄膜铌酸锂', icon: '◉' },
-              { label: '波导传输损耗', icon: '◈' },
-              { label: '电光调制', icon: '◎' },
-              { label: '频率转换', icon: '◉' },
-            ]}
-            cylinderLabel="长期可靠性"
-          />
-          <DataCard
-            title="外部客户测试数据"
-            items={[
-              { label: '客户样品', icon: '☰' },
-              { label: '委托测试', icon: '▥' },
-              { label: '测试工单', icon: '❋' },
-              { label: '原始数据', icon: '⊞' },
-            ]}
-            cylinderLabel="结果报告"
-          />
+        {/* Subtitle */}
+        <div style={{ padding: '12px 32px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#e0f0ff' }}>数据概览</div>
+            <div style={{ fontSize: 12, color: 'rgba(150,200,240,0.5)' }}>内部研发数据与外部客户数据分类管理</div>
+          </div>
         </div>
 
-        {/* Bottom Row - fills remaining space */}
-        <div style={{ display: 'flex', gap: 20, flex: 1, minHeight: 0 }}>
-          {/* Chart */}
-          <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div className="chart-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div className="chart-title">
+        {/* Main Content */}
+        <div style={{ flex: 1, padding: '0 24px 20px', display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 }}>
+          {/* Two Data Cards */}
+          <div style={{ display: 'flex', gap: 16, flex: '0 0 auto' }}>
+            <GlowCard
+              title="内部研发测试数据"
+              items={[
+                { label: '薄膜铌酸锂', icon: '◉' },
+                { label: '波导传输损耗', icon: '◈' },
+                { label: '电光调制', icon: '◎' },
+                { label: '频率转换', icon: '◉' },
+              ]}
+              cylinderLabel="长期可靠性"
+            />
+            <GlowCard
+              title="外部客户测试数据"
+              items={[
+                { label: '客户样品', icon: '☰' },
+                { label: '委托测试', icon: '▥' },
+                { label: '测试工单', icon: '❋' },
+                { label: '原始数据', icon: '⊞' },
+              ]}
+              cylinderLabel="结果报告"
+            />
+          </div>
+
+          {/* Bottom Row */}
+          <div style={{ display: 'flex', gap: 16, flex: 1, minHeight: 0 }}>
+            {/* Chart */}
+            <div style={{
+              flex: 1,
+              background: 'rgba(5,20,45,0.65)',
+              backdropFilter: 'blur(16px)',
+              borderRadius: 16,
+              border: '1px solid rgba(0,180,255,0.2)',
+              padding: '16px 20px',
+              display: 'flex', flexDirection: 'column',
+              boxShadow: '0 0 40px rgba(0,150,255,0.08), inset 0 1px 0 rgba(0,200,255,0.1)',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(200,240,255,0.9)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 16 }}>
                 项目仪表盘统计
-                <div className="legend-item">
-                  <div className="legend-dot" style={{ background: 'rgba(0,220,255,0.8)' }} />
-                  项目数量
-                </div>
-                <div className="legend-item">
-                  <div className="legend-dot" style={{ background: 'rgba(0,200,180,0.7)' }} />
-                  新项目数量
+                <div style={{ display: 'flex', gap: 12, marginLeft: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(150,210,255,0.5)' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(0,220,255,0.8)' }} />
+                    项目数量
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(150,210,255,0.5)' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(0,255,200,0.7)' }} />
+                    新项目数量
+                  </div>
                 </div>
               </div>
               <div style={{ flex: 1, minHeight: 0 }}>
                 <LineChart />
               </div>
             </div>
-          </div>
 
-          {/* Gauge */}
-          <div className="panel" style={{ width: 240, flex: '0 0 240px' }}>
-            <div className="gauge-panel">
-              <div className="gauge-title">标准仪表盘组件</div>
+            {/* Gauge */}
+            <div style={{
+              width: 200, flex: '0 0 200px',
+              background: 'rgba(5,20,45,0.65)',
+              backdropFilter: 'blur(16px)',
+              borderRadius: 16,
+              border: '1px solid rgba(0,180,255,0.2)',
+              padding: 16,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+              boxShadow: '0 0 40px rgba(0,150,255,0.08), inset 0 1px 0 rgba(0,200,255,0.1)',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(200,240,255,0.7)' }}>标准仪表盘组件</div>
               <Gauge />
-              <div className="gauge-legend">
-                <div className="gauge-legend-item">
-                  <div className="gauge-legend-dot" style={{ background: 'rgba(0,220,255,0.8)' }} />
+              <div style={{ display: 'flex', gap: 12, fontSize: 10, color: 'rgba(150,210,255,0.4)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(0,220,255,0.8)' }} />
                   内部数据总量
                 </div>
-                <div className="gauge-legend-item">
-                  <div className="gauge-legend-dot" style={{ background: 'rgba(0,120,180,0.5)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(0,120,180,0.5)' }} />
                   外部数据总量
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Recent Updates */}
-          <div className="panel" style={{ width: 260, flex: '0 0 260px' }}>
-            <div className="recent-panel">
-              <div className="recent-title">最近更新</div>
-              <div className="recent-header">
+            {/* Recent Updates */}
+            <div style={{
+              width: 220, flex: '0 0 220px',
+              background: 'rgba(5,20,45,0.65)',
+              backdropFilter: 'blur(16px)',
+              borderRadius: 16,
+              border: '1px solid rgba(0,180,255,0.2)',
+              padding: 16,
+              display: 'flex', flexDirection: 'column',
+              boxShadow: '0 0 40px rgba(0,150,255,0.08), inset 0 1px 0 rgba(0,200,255,0.1)',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(200,240,255,0.9)', marginBottom: 12 }}>最近更新</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(150,210,255,0.4)', marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(0,180,255,0.1)' }}>
                 <span>信息</span>
                 <span>更改</span>
               </div>
@@ -314,9 +400,14 @@ export default function Home() {
                 { info: '铌酸锂调制器频率响应', count: 'V3.1' },
                 { info: '铌酸锂可靠性加速老化', count: 'V2.5' },
               ].map((row) => (
-                <div key={row.info} className="recent-row">
-                  <span className="info">{row.info}</span>
-                  <span className="count">{row.count}</span>
+                <div key={row.info} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '7px 0',
+                  borderBottom: '1px solid rgba(0,180,255,0.06)',
+                  fontSize: 11,
+                }}>
+                  <span style={{ color: 'rgba(180,230,255,0.7)' }}>{row.info}</span>
+                  <span style={{ color: '#00d4ff', fontWeight: 600, fontSize: 11 }}>{row.count}</span>
                 </div>
               ))}
             </div>
