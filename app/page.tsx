@@ -2,11 +2,11 @@
 
 export default function Home() {
   return (
-    <div style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
       <img
         src="/bg.jpg"
         alt="铌酸锂光学"
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        style={{ width: '90%', height: '90%', objectFit: 'contain', display: 'block' }}
       />
     </div>
   )
