@@ -6,7 +6,7 @@ export default function Home() {
       <img
         src="/bg.jpg"
         alt="铌酸锂光学"
-        style={{ width: '50%', height: '50%', objectFit: 'contain', display: 'block' }}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
       />
     </div>
   )
